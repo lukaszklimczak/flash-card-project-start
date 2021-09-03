@@ -1,16 +1,26 @@
 import tkinter
 import csv
 
+
 BACKGROUND_COLOR = "#B1DDC6"
 languages = []
 index = 0
 words = []
+list_to_learn = []
 
 
 def correct_answer():
     global index
-    index +=1
+    index += 1
     reset()
+
+
+def wrong_answer():
+    global index, list_to_learn
+    list_to_learn.append([words[index][0], words[index][1]])
+    index += 1
+    reset()
+    update_data()
 
 
 def reset():
@@ -21,16 +31,30 @@ def reset():
     count_down_card()
     count_down_language()
     count_down_word()
-    get_data()
 
 
 def get_data():
     global words
     global index
-    with open(".\data\\french_words.csv") as file:
-        data = csv.reader(file)
-        next(data, None) #to skip headers
-        words = [row for row in data]
+    try:
+        with open(".\data\\words_to_learn.csv") as file:
+            data = csv.reader(file)
+            next(data, None)  # to skip headers
+            words = [row for row in data]
+    except FileNotFoundError:
+        with open(".\data\\french_words.csv") as file:
+            data = csv.reader(file)
+            next(data, None)  # to skip headers
+            words = [row for row in data]
+    print(words)
+
+
+def update_data():
+    global list_to_learn, languages, index
+    with open(".\data\words_to_learn.csv", "w") as new_file:
+        new_file.write(f"{languages[0][0]},{languages[0][1]}\n")
+        for el in list_to_learn:
+            new_file.write(f"{el[0]},{el[1]}\n")
 
 
 def count_down_card():
@@ -64,7 +88,6 @@ def get_languages():
     global languages
     with open(".\data\\french_words.csv") as file:
         data = csv.reader(file)
-
         for row in data:
             languages.append(row)
             break
@@ -91,7 +114,7 @@ right_button = tkinter.Button(window, image=right_symbol, highlightthickness=0, 
 right_button.place(x=200, y=570)
 
 wrong_symbol = tkinter.PhotoImage(file=".\images\wrong.png")
-wrong_button = tkinter.Button(window, image=wrong_symbol, highlightthickness=0)
+wrong_button = tkinter.Button(window, image=wrong_symbol, highlightthickness=0, command=wrong_answer)
 wrong_button.place(x=560, y=570)
 
 count_down_card()
