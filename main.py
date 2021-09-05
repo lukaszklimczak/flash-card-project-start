@@ -6,67 +6,63 @@ BACKGROUND_COLOR = "#B1DDC6"
 languages = []
 index = 0
 words = []
-list_to_learn = []
+timer = None
 
 
 def correct_answer():
     global index
-    index += 1
+    update_data()
     reset()
 
 
 def wrong_answer():
-    global index, list_to_learn
-    list_to_learn.append([words[index][0], words[index][1]])
+    global index
     index += 1
     reset()
-    update_data()
 
 
 def reset():
     global index
+    cancel()
     canvas.itemconfig(image_on_canvas, image=card_front_img)
-    canvas.itemconfig(language, text=main_language)
-    canvas.itemconfig(word, text=words[index][0])
-    count_down_card()
-    count_down_language()
-    count_down_word()
+    canvas.itemconfig(language, text=main_language, fill="black")
+    canvas.itemconfig(word, text=words[index][0], fill="black")
+    countdown()
 
 
 def get_data():
-    global words
-    global index
+    global words, languages
     try:
         with open(".\data\\words_to_learn.csv") as file:
             data = csv.reader(file)
             next(data, None)  # to skip headers
             words = [row for row in data]
+
     except FileNotFoundError:
         with open(".\data\\french_words.csv") as file:
             data = csv.reader(file)
             next(data, None)  # to skip headers
             words = [row for row in data]
-    print(words)
+
+        new_file = open(".\data\\words_to_learn.csv", "w")
+        new_file.write(f"{languages[0][0]},{languages[0][1]}\n")
+        for row in words:
+            new_file.write(f"{row[0]},{row[1]}\n")
+        new_file.close()
+
+        with open(".\data\\words_to_learn.csv") as new_file:
+            data = csv.reader(new_file)
+            next(data, None)  # to skip headers
+            words = [row for row in data]
 
 
 def update_data():
-    global list_to_learn, languages, index
-    with open(".\data\words_to_learn.csv", "w") as new_file:
+    global index, words
+    words.remove(words[index])
+    with open(".\data\\words_to_learn.csv", "w") as new_file:
         new_file.write(f"{languages[0][0]},{languages[0][1]}\n")
-        for el in list_to_learn:
-            new_file.write(f"{el[0]},{el[1]}\n")
-
-
-def count_down_card():
-    window.after(3000, change_card)
-
-
-def count_down_language():
-    window.after(3000, change_language)
-
-
-def count_down_word():
-    window.after(3000, change_word)
+        for row in words:
+            new_file.write(f"{row[0]},{row[1]}\n")
 
 
 def change_card():
@@ -75,13 +71,29 @@ def change_card():
 
 def change_language():
     global languages, index
-    canvas.itemconfig(language, text=languages[0][1])
+    canvas.itemconfig(language, text=languages[0][1], fill="white")
 
 
 def change_word():
     global index
     global words
-    canvas.itemconfig(word, text=words[index][1])
+    canvas.itemconfig(word, text=words[index][1], fill="white")
+
+
+def change():
+    change_card()
+    change_language()
+    change_word()
+
+
+def countdown():
+    global timer
+    timer = window.after(3000, change)
+
+
+def cancel():
+    global timer
+    window.after_cancel(timer)
 
 
 def get_languages():
@@ -96,8 +108,8 @@ def get_languages():
 window = tkinter.Tk()
 window.title("Flash Card App")
 
-get_data()
 get_languages()
+get_data()
 main_language = languages[index][0]
 
 canvas = tkinter.Canvas(window, width=900, height=700, bg=BACKGROUND_COLOR, highlightthickness=0)
@@ -117,9 +129,6 @@ wrong_symbol = tkinter.PhotoImage(file=".\images\wrong.png")
 wrong_button = tkinter.Button(window, image=wrong_symbol, highlightthickness=0, command=wrong_answer)
 wrong_button.place(x=560, y=570)
 
-count_down_card()
-count_down_language()
-count_down_word()
-
+countdown()
 
 window.mainloop()
